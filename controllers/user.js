@@ -118,3 +118,50 @@ exports.forgotPassword = async (req, res, next) => {
     });
   }
 };
+
+exports.resetPaswword = async (req, res, next) => {
+  console.log("inside rhe conrtroller");
+  try {
+    // 1) First encrypt the token
+
+    const hashtoken = crypto
+      .createHash("sha256")
+      .update(req.params.token)
+      .digest("hex");
+    if (!hashtoken) {
+      throw new Error("Invalid user");
+    }
+
+    // 2). Find user on the basis of token if user is available set the new password
+
+    const user = await User.findOne({
+      passwordResetToken: hashtoken,
+      passwordResetExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      throw new Error("Invalid user");
+    }
+
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpire = undefined;
+    await user.save();
+
+    // 3) Update the changePasswordAt (before save document , document pre save middleware run automatically)
+
+    // 4) give the login access
+
+    const token = signToken(user._id);
+    res.status(200).json({
+      status: "success",
+      token,
+    });
+  } catch (error) {
+    res.status(404).json({
+      status: "fail",
+      message: error.message,
+    });
+  }
+};
