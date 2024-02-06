@@ -9,12 +9,11 @@ const signToken = (id) =>
   });
 exports.signup = async (req, res, next) => {
   try {
-    const { name, image, role, email, password } = req.body;
+    const { name, image, email, password } = req.body;
     const response = await User.create({
       name,
       email,
       image,
-      role,
       password,
     });
     const token = signToken(response._id);
@@ -161,6 +160,64 @@ exports.resetPaswword = async (req, res, next) => {
   } catch (error) {
     res.status(404).json({
       status: "fail",
+      message: error.message,
+    });
+  }
+};
+
+// {
+//   active: true,
+//     currentUserEmail: "ferazaaahmad62@gmail.com",
+//     updateUser:"ferazkhan4@gmail.com"
+
+// }
+exports.activate = async (req, res, next) => {
+  const { active } = req.body;
+  try {
+    const { currentUserEmail } = req.body;
+    try {
+      const currentUser = await User.findOne({ email: currentUserEmail });
+      if (currentUser.role !== "admin") {
+        throw new Error("you are not authorize to perform this action");
+      }
+    } catch (error) {
+      error.statusCode = 401;
+      throw error;
+    }
+
+    try {
+      if (active === undefined) {
+        throw new Error("Please give the valuee  of active");
+      }
+    } catch (error) {
+      error.statusCode = 400;
+      throw error;
+    }
+
+    try {
+      const { updateUser } = req.body;
+      const updatedUser = await User.findOneAndUpdate(
+        { email: updateUser },
+        { active },
+        { new: true }
+      );
+
+      if (!updatedUser) {
+        throw new Error("this user does not exist ");
+      }
+      res.status(200).json({
+        status: "success",
+        data: {
+          user: updatedUser,
+        },
+      });
+    } catch (error) {
+      error.statusCode = 400;
+      throw error;
+    }
+  } catch (error) {
+    res.status(error.statusCode).json({
+      status: "Fail",
       message: error.message,
     });
   }
