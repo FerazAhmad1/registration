@@ -10,7 +10,13 @@ const DB = process.env.DATABASE.replace(
   process.env.DATABASE_PASSWORD
 );
 
-mongoose.connect(DB).then((connection) => console.log(connection));
+mongoose
+  .connect(DB, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then((connection) => connection)
+  .catch((err) => console.log(err.message));
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`app is running on port ${port}`);
