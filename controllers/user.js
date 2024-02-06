@@ -31,8 +31,41 @@ exports.signup = async (req, res, next) => {
 };
 
 exports.login = async (req, res, next) => {
-  const { email, password } = req.body;
-  console.log(email);
-  const user = await User.findOne({ email }).select("+password");
-  console.log(user);
+  try {
+    const { email, password } = req.body;
+    console.log(email);
+    const user = await User.findOne({ email }).select("+password");
+
+    // check if user have correct email and password
+    if (!user || !(await user.correctpassword(password, user.password))) {
+      res.status(401).json({
+        status: "Fail",
+        message: "unauthorized",
+      });
+      next();
+    }
+
+    // send jwt token and authorize user
+    const token = signToken(user._id);
+    const cookieOption = {
+      expires: new Date(
+        Date.now() + process.env.JWT_COOKIE_EXPIRE_IN * 24 * 60 * 60 * 1000
+      ),
+      httpOnly: true,
+    };
+
+    if (process.env.NODE_ENV === "production") {
+      cookieOption.secure = true;
+    }
+    res.cookie("jwt", token, cookieOption);
+    res.status(200).json({
+      status: "success",
+      token,
+    });
+  } catch (error) {
+    res.status(401).json({
+      status: "Fail",
+      message: error.message,
+    });
+  }
 };
