@@ -1,5 +1,7 @@
 const User = require("../models/user.js");
 const resetPasswordHtml = require("../utils/resetpassword.js");
+const loginValidationSchema = require("../utils/loginvalidationSchema.js");
+const { applyValidation } = require("../utils/helper.js");
 const sendMail = require("../utils/email.js");
 const jwt = require("jsonwebtoken");
 
@@ -34,6 +36,21 @@ exports.signup = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+
+    try {
+      const validate = await applyValidation(
+        { email, password },
+        loginValidationSchema
+      );
+    } catch (error) {
+      res.status(error.errorCode).json({
+        status: "Fail",
+        message: error.message,
+      });
+
+      return;
+    }
+
     console.log(email);
     const user = await User.findOne({ email }).select("+password");
 
