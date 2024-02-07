@@ -95,19 +95,29 @@ exports.forgotPassword = async (req, res, next) => {
     console.log(resetLink);
     // send email
 
-    const result = await sendMail({
-      sender: "ferazkhan4@gmail.com",
-      email: [user.email],
-      subject: "your password reset mail",
-      htmlcontent: `<p>Please click the following link to reset your password:</p>`,
-      resetLink,
-      resetPasswordHtml,
-    });
-    if (result.rejected.length === 0) {
-      res.status(250).json({
-        success: true,
-        message:
-          "Password reset request has been processed successfully. Please check your email for further instructions.",
+    try {
+      const result = await sendMail({
+        sender: "ferazkhan4@gmail.com",
+        email: [user.email],
+        subject: "your password reset mail",
+        htmlcontent: `<p>Please click the following link to reset your password:</p>`,
+        resetLink,
+        resetPasswordHtml,
+      });
+      if (result.rejected.length === 0) {
+        res.status(250).json({
+          success: true,
+          message:
+            "Password reset request has been processed successfully. Please check your email for further instructions.",
+        });
+      }
+    } catch (error) {
+      user.passwordResetToken = undefined;
+      user.passwordResetExpire = undefined;
+      user.save({ validateBeforeSave: false });
+      res.status(500).json({
+        status: "fail",
+        message: "there was an error sending the mail please try again later",
       });
     }
   } catch (error) {
@@ -219,6 +229,28 @@ exports.activate = async (req, res, next) => {
     res.status(error.statusCode).json({
       status: "Fail",
       message: error.message,
+    });
+  }
+};
+
+exports.updateUser = async (req, res, next) => {
+  const { name, email, image } = req.body;
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { name, email, image },
+      { new: true, runValidators: true }
+    );
+    res.status(200).json({
+      status: "success",
+      data: {
+        user,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "Fail",
+      message: "internal server error",
     });
   }
 };
