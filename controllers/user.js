@@ -194,12 +194,6 @@ exports.resetPaswword = async (req, res, next) => {
   }
 };
 
-// {
-//   active: true,
-//     currentUserEmail: "ferazaaahmad62@gmail.com",
-//     updateUser:"ferazkhan4@gmail.com"
-
-// }
 exports.activate = async (req, res, next) => {
   const { active } = req.body;
   try {
