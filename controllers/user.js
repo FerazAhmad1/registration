@@ -52,7 +52,9 @@ exports.login = async (req, res, next) => {
     }
 
     console.log(email);
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email, active: true }).select(
+      "+password"
+    );
 
     // check if user have correct email and password
     if (!user || !(await user.correctpassword(password, user.password))) {
